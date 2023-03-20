@@ -139,10 +139,6 @@ namespace phys
     {
         m_collider.validate();
         m_compeller.validate();
-        for (const std::shared_ptr<force2D> &f : m_forces)
-            f->validate();
-        for (const std::shared_ptr<interaction2D> &i : m_interactions)
-            i->validate();
         for (auto it = m_springs.begin(); it != m_springs.end();)
             if (!it->try_validate())
                 it = m_springs.erase(it);
@@ -154,14 +150,15 @@ namespace phys
     {
         PERF_FUNCTION()
         for (const std::shared_ptr<const force2D> f : m_forces)
-            for (const const_entity2D_ptr &e : f->entities())
-            {
-                if (!e->kinematic())
-                    continue;
-                const std::size_t index = 6 * e.index();
-                const auto [force, torque] = f->force(*e);
-                load_force(stchanges, force, torque, index);
-            }
+            if (f->enabled())
+                for (const const_entity2D_ptr &e : f->entities())
+                {
+                    if (!e->kinematic())
+                        continue;
+                    const std::size_t index = 6 * e.index();
+                    const auto [force, torque] = f->force(*e);
+                    load_force(stchanges, force, torque, index);
+                }
         for (const spring2D &s : m_springs)
         {
             const std::size_t index1 = 6 * s.e1().index(),
